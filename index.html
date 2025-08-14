@@ -68,8 +68,8 @@
     <script src="https://unpkg.com/@eohjsc/era-widget@1.1.3/src/index.js"></script>
     <script>
         $(document).ready(function() {
-            let countdown = 12;
             let queueTimes = [5, 8, 12, 15, 18]; // in seconds
+            let countdown = queueTimes.length > 0 ? queueTimes[0] : 12;
             let currentQueueIndex = 0;
             
             // Initialize E-Ra widget
@@ -117,7 +117,24 @@
                     },
                     onValues: (values) => {
                         console.log('E-Ra real-time values:', values);
-                        // Handle real-time updates here if needed
+                        // Add new value to queue with [timestamp, duration] format
+                        if (values && Array.isArray(values) && values.length > 0) {
+                            try {
+                                const data = JSON.parse(values[0]);
+                                if (Array.isArray(data) && data.length >= 2) {
+                                    const [timestamp, duration] = data;
+                                    const now = Date.now();
+                                    // Check if timestamp + duration >= now
+                                    if ((timestamp + (duration * 1000)) >= now && duration > 0) {
+                                        queueTimes.push(duration);
+                                        generateCards();
+                                        updateCardCount();
+                                    }
+                                }
+                            } catch (e) {
+                                console.warn('Failed to parse real-time value:', values[0], e);
+                            }
+                        }
                     }
                 });
             }
@@ -125,33 +142,35 @@
             function generateCards() {
                 $('#waitingCardsList').empty();
                 
-                // Add first card with progress bar
-                $('#waitingCardsList').append(`
-                    <div class="col-md-4 mb-3">
-                        <div class="card waiting-card">
-                            <div class="card-body d-flex align-items-center justify-content-center" style="height: 100px;">
-                                <div class="progress w-100" style="height: 60px;">
-                                    <div class="progress-bar d-flex align-items-center justify-content-center" role="progressbar" id="desktopProgressBar" style="width: 100%;">
-                                        <span class="fw-bold text-white" id="desktopCountdownText">12s</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `);
-                
-                // Add remaining cards based on queue times
-                queueTimes.forEach((time, index) => {
+                if (queueTimes.length > 0) {
+                    // Add first card with progress bar using first queue time
                     $('#waitingCardsList').append(`
                         <div class="col-md-4 mb-3">
                             <div class="card waiting-card">
                                 <div class="card-body d-flex align-items-center justify-content-center" style="height: 100px;">
-                                    <h5 class="card-title mb-0">${time}s</h5>
+                                    <div class="progress w-100" style="height: 60px;">
+                                        <div class="progress-bar d-flex align-items-center justify-content-center" role="progressbar" id="desktopProgressBar" style="width: 100%;">
+                                            <span class="fw-bold text-white" id="desktopCountdownText">${queueTimes[0]}s</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     `);
-                });
+                    
+                    // Add remaining cards based on queue times (skip first one as it's already added as progress bar)
+                    queueTimes.slice(1).forEach((time, index) => {
+                        $('#waitingCardsList').append(`
+                            <div class="col-md-4 mb-3">
+                                <div class="card waiting-card">
+                                    <div class="card-body d-flex align-items-center justify-content-center" style="height: 100px;">
+                                        <h5 class="card-title mb-0">${time}s</h5>
+                                    </div>
+                                </div>
+                            </div>
+                        `);
+                    });
+                }
             }
             
             function updateCardCount() {
@@ -202,7 +221,7 @@
                 $('#countdownText').text(timeText);
                 $('#desktopCountdownText').text(timeText);
                 
-                const totalTime = currentQueueIndex > 0 ? queueTimes[currentQueueIndex - 1] : 12;
+                const totalTime = currentQueueIndex > 0 ? queueTimes[currentQueueIndex - 1] : queueTimes[0] || 12;
                 const progressPercent = (countdown / totalTime) * 100;
                 $('#progressBar').css('width', progressPercent + '%');
                 $('#desktopProgressBar').css('width', progressPercent + '%');
@@ -219,15 +238,42 @@
                     countdown--;
                     setTimeout(updateCountdown, 1000);
                 } else {
-                    // Show complete state briefly
+                    // Show complete state and start 90s delay countdown
                     $('#countdownText').text('Available').removeClass('text-danger').addClass('text-white');
                     $('#desktopCountdownText').text('Available').removeClass('text-danger').addClass('text-white');
                     $('#progressBar').css('width', '100%').removeClass('progress-bar').addClass('progress-bar bg-success');
                     $('#desktopProgressBar').css('width', '100%').removeClass('progress-bar').addClass('progress-bar bg-success');
                     
-                    // Move to next after 1 second
-                    setTimeout(moveToNextQueue, 1000);
+                    // Start 90 second delay countdown
+                    startDelayCountdown();
                 }
+            }
+            
+            function startDelayCountdown() {
+                let delayCountdown = 90;
+                
+                function updateDelayCountdown() {
+                    const minutes = Math.floor(delayCountdown / 60);
+                    const seconds = delayCountdown % 60;
+                    const timeText = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+                    
+                    $('#countdownText').text(`Next: ${timeText}`);
+                    $('#desktopCountdownText').text(`Next: ${timeText}`);
+                    
+                    // Progress bar decreases during delay (100% to 0%)
+                    const progressPercent = (delayCountdown / 90) * 100;
+                    $('#progressBar').css('width', progressPercent + '%');
+                    $('#desktopProgressBar').css('width', progressPercent + '%');
+                    
+                    if (delayCountdown > 0) {
+                        delayCountdown--;
+                        setTimeout(updateDelayCountdown, 1000);
+                    } else {
+                        moveToNextQueue();
+                    }
+                }
+                
+                updateDelayCountdown();
             }
             
             updateCountdown();
