@@ -57,78 +57,6 @@
                 <div class="col-12">
                     <h2 class="mb-4">Waiting Queue</h2>
                     <div class="row" id="waitingCardsList">
-                        <div class="col-md-4 mb-3">
-                            <div class="card waiting-card">
-                                <div class="card-body">
-                                    <h5 class="card-title">Device #001</h5>
-                                    <p class="card-text">Smart Plug - Living Room</p>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span class="badge bg-warning">Waiting</span>
-                                        <small class="text-muted">2 min ago</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="card waiting-card">
-                                <div class="card-body">
-                                    <h5 class="card-title">Device #002</h5>
-                                    <p class="card-text">Smart Plug - Kitchen</p>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span class="badge bg-info">Processing</span>
-                                        <small class="text-muted">5 min ago</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="card waiting-card">
-                                <div class="card-body">
-                                    <h5 class="card-title">Device #003</h5>
-                                    <p class="card-text">Smart Plug - Bedroom</p>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span class="badge bg-secondary">Queued</span>
-                                        <small class="text-muted">8 min ago</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="card waiting-card">
-                                <div class="card-body">
-                                    <h5 class="card-title">Device #004</h5>
-                                    <p class="card-text">Smart Plug - Office</p>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span class="badge bg-success">Connected</span>
-                                        <small class="text-muted">12 min ago</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="card waiting-card">
-                                <div class="card-body">
-                                    <h5 class="card-title">Device #005</h5>
-                                    <p class="card-text">Smart Plug - Garage</p>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span class="badge bg-danger">Error</span>
-                                        <small class="text-muted">15 min ago</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="card waiting-card">
-                                <div class="card-body">
-                                    <h5 class="card-title">Device #006</h5>
-                                    <p class="card-text">Smart Plug - Patio</p>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span class="badge bg-warning">Waiting</span>
-                                        <small class="text-muted">18 min ago</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -140,38 +68,118 @@
     <script>
         $(document).ready(function() {
             let countdown = 12;
-            const totalCards = $('#waitingCardsList .col-md-4').length;
-            $('#cardCount').text(totalCards);
+            const queueTimes = [5, 8, 12, 15, 18]; // in seconds
+            let currentQueueIndex = 0;
+            
+            function generateCards() {
+                $('#waitingCardsList').empty();
+                
+                // Add first card with progress bar
+                $('#waitingCardsList').append(`
+                    <div class="col-md-4 mb-3">
+                        <div class="card waiting-card">
+                            <div class="card-body d-flex align-items-center justify-content-center" style="height: 100px;">
+                                <div class="progress w-100" style="height: 60px;">
+                                    <div class="progress-bar d-flex align-items-center justify-content-center" role="progressbar" id="desktopProgressBar" style="width: 100%;">
+                                        <span class="fw-bold text-white" id="desktopCountdownText">12s</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `);
+                
+                // Add remaining cards based on queue times
+                queueTimes.forEach((time, index) => {
+                    $('#waitingCardsList').append(`
+                        <div class="col-md-4 mb-3">
+                            <div class="card waiting-card">
+                                <div class="card-body d-flex align-items-center justify-content-center" style="height: 100px;">
+                                    <h5 class="card-title mb-0">${time}s</h5>
+                                </div>
+                            </div>
+                        </div>
+                    `);
+                });
+            }
+            
+            function updateCardCount() {
+                const totalCards = $('#waitingCardsList .col-md-4').length;
+                $('#cardCount').text(totalCards);
+            }
+            
+            generateCards();
+            updateCardCount();
+            
+            function moveToNextQueue() {
+                // Remove first card from desktop
+                $('#waitingCardsList .col-md-4').first().remove();
+                
+                // Update card count
+                updateCardCount();
+                
+                // Start next countdown if there are more items
+                if (currentQueueIndex < queueTimes.length) {
+                    countdown = queueTimes[currentQueueIndex];
+                    currentQueueIndex++;
+                    
+                    // Reset progress bar color
+                    $('#progressBar').removeClass('bg-success').addClass('progress-bar');
+                    $('#desktopProgressBar').removeClass('bg-success').addClass('progress-bar');
+                    
+                    // Add progress bar to the new first card if it doesn't have one
+                    const firstCard = $('#waitingCardsList .col-md-4').first();
+                    if (firstCard.length && !firstCard.find('.progress').length) {
+                        firstCard.find('.card-body').html(`
+                            <div class="progress w-100" style="height: 60px;">
+                                <div class="progress-bar d-flex align-items-center justify-content-center" role="progressbar" id="desktopProgressBar" style="width: 100%;">
+                                    <span class="fw-bold text-white" id="desktopCountdownText">12s</span>
+                                </div>
+                            </div>
+                        `);
+                    }
+                    
+                    updateCountdown();
+                }
+            }
             
             function updateCountdown() {
-                $('#countdownText').text(countdown + 's');
-                const progressPercent = (countdown / 12) * 100;
+                const minutes = Math.floor(countdown / 60);
+                const seconds = countdown % 60;
+                const timeText = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+                
+                $('#countdownText').text(timeText);
+                $('#desktopCountdownText').text(timeText);
+                
+                const totalTime = currentQueueIndex > 0 ? queueTimes[currentQueueIndex - 1] : 12;
+                const progressPercent = (countdown / totalTime) * 100;
                 $('#progressBar').css('width', progressPercent + '%');
+                $('#desktopProgressBar').css('width', progressPercent + '%');
                 
                 if (progressPercent < 50) {
                     $('#countdownText').removeClass('text-white').addClass('text-danger');
+                    $('#desktopCountdownText').removeClass('text-white').addClass('text-danger');
                 } else {
                     $('#countdownText').removeClass('text-danger').addClass('text-white');
+                    $('#desktopCountdownText').removeClass('text-danger').addClass('text-white');
                 }
                 
                 if (countdown > 0) {
                     countdown--;
                     setTimeout(updateCountdown, 1000);
                 } else {
+                    // Show complete state briefly
                     $('#countdownText').text('Complete!').removeClass('text-danger').addClass('text-white');
+                    $('#desktopCountdownText').text('Complete!').removeClass('text-danger').addClass('text-white');
                     $('#progressBar').css('width', '100%').removeClass('progress-bar').addClass('progress-bar bg-success');
+                    $('#desktopProgressBar').css('width', '100%').removeClass('progress-bar').addClass('progress-bar bg-success');
+                    
+                    // Move to next after 1 second
+                    setTimeout(moveToNextQueue, 1000);
                 }
             }
             
-            if (window.innerWidth <= 480) {
-                updateCountdown();
-            }
-            
-            $(window).resize(function() {
-                if (window.innerWidth <= 480 && countdown > 0) {
-                    updateCountdown();
-                }
-            });
+            updateCountdown();
         });
     </script>
 </body>
