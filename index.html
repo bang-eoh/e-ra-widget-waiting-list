@@ -38,12 +38,12 @@
         <div class="container-fluid vh-100 d-flex align-items-center justify-content-center p-3">
             <div class="w-100 position-relative">
                 <div class="position-absolute top-0 end-0" style="z-index: 10; transform: translateY(-50%);">
-                    <span class="badge bg-warning text-dark" id="cardCount">6</span>
+                    <span class="badge bg-warning text-dark" id="cardCount">0</span>
                 </div>
                 <div class="progress position-relative" style="height: 60px; cursor: pointer;" id="progressButton">
-                    <div class="progress-bar" role="progressbar" id="progressBar" style="width: 100%;"></div>
+                    <div class="progress-bar bg-success" role="progressbar" id="progressBar" style="width: 100%;"></div>
                     <div class="position-absolute top-50 start-50 translate-middle">
-                        <span class="fw-bold text-white" id="countdownText">12s</span>
+                        <span class="fw-bold text-white" id="countdownText">Available</span>
                     </div>
                 </div>
             </div>
@@ -68,8 +68,8 @@
     <script src="https://unpkg.com/@eohjsc/era-widget@1.1.3/src/index.js"></script>
     <script>
         $(document).ready(function() {
-            let queueTimes = [5, 8, 12, 15, 18]; // in seconds
-            let countdown = queueTimes.length > 0 ? queueTimes[0] : 12;
+            let queueTimes = []; // Start with empty queue
+            let countdown = 0;
             let currentQueueIndex = 0;
             
             // Initialize E-Ra widget
@@ -108,9 +108,16 @@
                                 });
                                 
                                 if (validItems.length > 0) {
+                                    const wasEmpty = queueTimes.length === 0;
                                     queueTimes = validItems;
                                     generateCards();
                                     updateCardCount();
+                                    // Start countdown if queue was empty
+                                    if (wasEmpty) {
+                                        countdown = queueTimes[0];
+                                        currentQueueIndex = 0;
+                                        updateCountdown();
+                                    }
                                 }
                             }
                         }
@@ -126,9 +133,16 @@
                                     const now = Date.now();
                                     // Check if timestamp + duration >= now
                                     if ((timestamp + (duration * 1000)) >= now && duration > 0) {
+                                        const wasEmpty = queueTimes.length === 0;
                                         queueTimes.push(duration);
                                         generateCards();
                                         updateCardCount();
+                                        // Start countdown if queue was empty
+                                        if (wasEmpty) {
+                                            countdown = queueTimes[0];
+                                            currentQueueIndex = 0;
+                                            updateCountdown();
+                                        }
                                     }
                                 }
                             } catch (e) {
@@ -180,6 +194,12 @@
             
             generateCards();
             updateCardCount();
+            
+            // Only start countdown if there are items in queue
+            if (queueTimes.length > 0) {
+                countdown = queueTimes[0];
+                updateCountdown();
+            }
             
             function moveToNextQueue() {
                 // Remove first card from desktop
@@ -275,8 +295,6 @@
                 
                 updateDelayCountdown();
             }
-            
-            updateCountdown();
         });
     </script>
 </body>
