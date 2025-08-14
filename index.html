@@ -65,11 +65,62 @@
 
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/@eohjsc/era-widget@1.1.3/src/index.js"></script>
     <script>
         $(document).ready(function() {
             let countdown = 12;
-            const queueTimes = [5, 8, 12, 15, 18]; // in seconds
+            let queueTimes = [5, 8, 12, 15, 18]; // in seconds
             let currentQueueIndex = 0;
+            
+            // Initialize E-Ra widget
+            if (typeof eraWidget !== 'undefined') {
+                eraWidget.init({
+                    mobileHeight: 300,
+                    needRealtimeConfigs: true,
+                    needHistoryConfigs: true,
+                    needActions: true,
+                    onConfiguration: (configuration) => {
+                        console.log('E-Ra configuration:', configuration);
+                    },
+                    onHistory: (histories) => {
+                        console.log('E-Ra histories:', histories);
+                        // Parse histories format: [{data: [{x, y}], name, color, sensor_id, chip_id, id }]
+                        if (histories && Array.isArray(histories)) {
+                            const firstHistory = histories[0];
+                            if (firstHistory && firstHistory.data && Array.isArray(firstHistory.data)) {
+                                const now = Date.now();
+                                const validItems = [];
+                                
+                                firstHistory.data.forEach(point => {
+                                    try {
+                                        // Parse y as JSON string containing [timestamp, duration]
+                                        const data = JSON.parse(point.y);
+                                        if (Array.isArray(data) && data.length >= 2) {
+                                            const [timestamp, duration] = data;
+                                            // Check if timestamp + duration >= now
+                                            if ((timestamp + (duration * 1000)) >= now) {
+                                                validItems.push(duration);
+                                            }
+                                        }
+                                    } catch (e) {
+                                        console.warn('Failed to parse history item:', point.y, e);
+                                    }
+                                });
+                                
+                                if (validItems.length > 0) {
+                                    queueTimes = validItems;
+                                    generateCards();
+                                    updateCardCount();
+                                }
+                            }
+                        }
+                    },
+                    onValues: (values) => {
+                        console.log('E-Ra real-time values:', values);
+                        // Handle real-time updates here if needed
+                    }
+                });
+            }
             
             function generateCards() {
                 $('#waitingCardsList').empty();
