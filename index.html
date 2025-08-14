@@ -82,7 +82,7 @@
                     onConfiguration: (configuration) => {
                         console.log('E-Ra configuration:', configuration);
                     },
-                    onHistory: (histories) => {
+                    onHistories: (histories) => {
                         console.log('E-Ra histories:', histories);
                         // Parse histories format: [{data: [{x, y}], name, color, sensor_id, chip_id, id }]
                         if (histories && Array.isArray(histories)) {
@@ -220,8 +220,8 @@
                     setTimeout(updateCountdown, 1000);
                 } else {
                     // Show complete state briefly
-                    $('#countdownText').text('Complete!').removeClass('text-danger').addClass('text-white');
-                    $('#desktopCountdownText').text('Complete!').removeClass('text-danger').addClass('text-white');
+                    $('#countdownText').text('Available').removeClass('text-danger').addClass('text-white');
+                    $('#desktopCountdownText').text('Available').removeClass('text-danger').addClass('text-white');
                     $('#progressBar').css('width', '100%').removeClass('progress-bar').addClass('progress-bar bg-success');
                     $('#desktopProgressBar').css('width', '100%').removeClass('progress-bar').addClass('progress-bar bg-success');
                     
