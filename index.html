@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Plug Interface</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        @media (max-width: 480px) {
+            .desktop-view { display: none !important; }
+            .mobile-view { display: block !important; }
+        }
+        
+        @media (min-width: 481px) {
+            .mobile-view { display: none !important; }
+            .desktop-view { display: block !important; }
+        }
+        
+        .countdown-display {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+        
+        .waiting-card {
+            transition: all 0.3s ease;
+        }
+        
+        .waiting-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Mobile View (≤480px) - Countdown -->
+    <div class="mobile-view">
+        <div class="container-fluid vh-100 d-flex align-items-center justify-content-center p-3">
+            <div class="w-100 position-relative">
+                <div class="position-absolute top-0 end-0" style="z-index: 10; transform: translateY(-50%);">
+                    <span class="badge bg-warning text-dark" id="cardCount">6</span>
+                </div>
+                <div class="progress position-relative" style="height: 60px; cursor: pointer;" id="progressButton">
+                    <div class="progress-bar" role="progressbar" id="progressBar" style="width: 100%;"></div>
+                    <div class="position-absolute top-50 start-50 translate-middle">
+                        <span class="fw-bold text-white" id="countdownText">12s</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Desktop View (>480px) - Waiting Card List -->
+    <div class="desktop-view">
+        <div class="container mt-5">
+            <div class="row">
+                <div class="col-12">
+                    <h2 class="mb-4">Waiting Queue</h2>
+                    <div class="row" id="waitingCardsList">
+                        <div class="col-md-4 mb-3">
+                            <div class="card waiting-card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Device #001</h5>
+                                    <p class="card-text">Smart Plug - Living Room</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="badge bg-warning">Waiting</span>
+                                        <small class="text-muted">2 min ago</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card waiting-card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Device #002</h5>
+                                    <p class="card-text">Smart Plug - Kitchen</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="badge bg-info">Processing</span>
+                                        <small class="text-muted">5 min ago</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card waiting-card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Device #003</h5>
+                                    <p class="card-text">Smart Plug - Bedroom</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="badge bg-secondary">Queued</span>
+                                        <small class="text-muted">8 min ago</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card waiting-card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Device #004</h5>
+                                    <p class="card-text">Smart Plug - Office</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="badge bg-success">Connected</span>
+                                        <small class="text-muted">12 min ago</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card waiting-card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Device #005</h5>
+                                    <p class="card-text">Smart Plug - Garage</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="badge bg-danger">Error</span>
+                                        <small class="text-muted">15 min ago</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card waiting-card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Device #006</h5>
+                                    <p class="card-text">Smart Plug - Patio</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="badge bg-warning">Waiting</span>
+                                        <small class="text-muted">18 min ago</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            let countdown = 12;
+            const totalCards = $('#waitingCardsList .col-md-4').length;
+            $('#cardCount').text(totalCards);
+            
+            function updateCountdown() {
+                $('#countdownText').text(countdown + 's');
+                const progressPercent = (countdown / 12) * 100;
+                $('#progressBar').css('width', progressPercent + '%');
+                
+                if (progressPercent < 50) {
+                    $('#countdownText').removeClass('text-white').addClass('text-danger');
+                } else {
+                    $('#countdownText').removeClass('text-danger').addClass('text-white');
+                }
+                
+                if (countdown > 0) {
+                    countdown--;
+                    setTimeout(updateCountdown, 1000);
+                } else {
+                    $('#countdownText').text('Complete!').removeClass('text-danger').addClass('text-white');
+                    $('#progressBar').css('width', '100%').removeClass('progress-bar').addClass('progress-bar bg-success');
+                }
+            }
+            
+            if (window.innerWidth <= 480) {
+                updateCountdown();
+            }
+            
+            $(window).resize(function() {
+                if (window.innerWidth <= 480 && countdown > 0) {
+                    updateCountdown();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
