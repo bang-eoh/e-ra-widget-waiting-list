@@ -124,16 +124,23 @@
                     },
                     onValues: (values) => {
                         console.log('E-Ra real-time values:', values);
-                        // Add new value to queue with [timestamp, duration] format
-                        if (values && Array.isArray(values) && values.length > 0) {
+                        // Add new value to queue with {id: value} format
+                        if (values && typeof values === 'object') {
+                            const id = Object.keys(values)[0];
+                            const value = values[id];
                             try {
-                                const data = JSON.parse(values[0]);
+                                const data = JSON.parse(value.value);
+                                console.log('Parsed data:', data, 'Type:', typeof data, 'Is array:', Array.isArray(data));
                                 if (Array.isArray(data) && data.length >= 2) {
                                     const [timestamp, duration] = data;
+                                    console.log('Extracted - timestamp:', timestamp, 'duration:', duration);
                                     const now = Date.now();
+                                    const endTime = timestamp + (duration * 1000);
+                                    console.log('Time validation - now:', now, 'endTime:', endTime, 'valid:', endTime >= now);
                                     // Check if timestamp + duration >= now
                                     if ((timestamp + (duration * 1000)) >= now && duration > 0) {
                                         const wasEmpty = queueTimes.length === 0;
+                                        console.log('Adding to queue - wasEmpty:', wasEmpty, 'duration:', duration);
                                         queueTimes.push(duration);
                                         generateCards();
                                         updateCardCount();
@@ -141,12 +148,17 @@
                                         if (wasEmpty) {
                                             countdown = queueTimes[0];
                                             currentQueueIndex = 0;
+                                            console.log('Starting countdown with duration:', countdown);
                                             updateCountdown();
                                         }
+                                    } else {
+                                        console.log('Item expired or invalid duration - skipping');
                                     }
+                                } else {
+                                    console.log('Data format invalid - not array or insufficient length');
                                 }
                             } catch (e) {
-                                console.warn('Failed to parse real-time value:', values[0], e);
+                                console.warn('Failed to parse real-time value for id', id, ':', value.value, e);
                             }
                         }
                     }
