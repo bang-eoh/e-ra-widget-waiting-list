@@ -99,10 +99,16 @@
                                             const [timestamp, duration] = data;
                                             // Check if timestamp + duration >= now
                                             if ((timestamp + (duration * 1000)) >= now) {
-                                                // Calculate remaining time (subtract time that has passed)
-                                                const timePassedMs = now - timestamp;
-                                                const timePassedSec = Math.floor(timePassedMs / 1000);
-                                                const remainingDuration = Math.max(0, duration - timePassedSec);
+                                                let remainingDuration;
+                                                if (timestamp > now) {
+                                                    // Future timestamp - keep full duration
+                                                    remainingDuration = duration;
+                                                } else {
+                                                    // Past timestamp - calculate remaining time (subtract time that has passed)
+                                                    const timePassedMs = now - timestamp;
+                                                    const timePassedSec = Math.floor(timePassedMs / 1000);
+                                                    remainingDuration = Math.max(0, duration - timePassedSec);
+                                                }
                                                 
                                                 if (remainingDuration > 0) {
                                                     validItems.push({
@@ -153,10 +159,16 @@
                                     console.log('Time validation - now:', now, 'endTime:', endTime, 'valid:', endTime >= now);
                                     // Check if timestamp + duration >= now
                                     if ((timestamp + (duration * 1000)) >= now && duration > 0) {
-                                        // Calculate remaining time (subtract time that has passed)
-                                        const timePassedMs = now - timestamp;
-                                        const timePassedSec = Math.floor(timePassedMs / 1000);
-                                        const remainingDuration = Math.max(0, duration - timePassedSec);
+                                        let remainingDuration;
+                                        if (timestamp > now) {
+                                            // Future timestamp - keep full duration
+                                            remainingDuration = duration;
+                                        } else {
+                                            // Past timestamp - calculate remaining time (subtract time that has passed)
+                                            const timePassedMs = now - timestamp;
+                                            const timePassedSec = Math.floor(timePassedMs / 1000);
+                                            remainingDuration = Math.max(0, duration - timePassedSec);
+                                        }
                                         
                                         console.log('Time calculation - timePassed:', timePassedSec, 'remainingDuration:', remainingDuration);
                                         
