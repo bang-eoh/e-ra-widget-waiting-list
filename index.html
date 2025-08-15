@@ -68,12 +68,7 @@
     <script src="https://unpkg.com/@eohjsc/era-widget@1.1.3/src/index.js"></script>
     <script>
         $(document).ready(function() {
-            let queue = [
-                {timestamp: Date.now(), duration: 10, remainingDuration: 10},
-                {timestamp: Date.now() + 20000, duration: 15, remainingDuration: 15},
-                {timestamp: Date.now() + 45000, duration: 20, remainingDuration: 20},
-                {timestamp: Date.now() + 75000, duration: 25, remainingDuration: 25}
-            ]; // Start with test data - 10s delay between items
+            let queue = []; // Start with empty queue
             let countdown = 0;
             let currentQueueIndex = 0;
             
