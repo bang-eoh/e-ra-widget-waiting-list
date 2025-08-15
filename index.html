@@ -41,7 +41,7 @@
                     <span class="badge bg-warning text-dark" id="cardCount">0</span>
                 </div>
                 <div class="progress position-relative" style="height: 60px; cursor: pointer;" id="progressButton">
-                    <div class="progress-bar bg-success" role="progressbar" id="progressBar" style="width: 100%;"></div>
+                    <div class="progress-bar" role="progressbar" id="progressBar" style="width: 100%;"></div>
                     <div class="position-absolute top-50 start-50 translate-middle">
                         <span class="fw-bold text-white" id="countdownText">Available</span>
                     </div>
@@ -132,6 +132,9 @@
                                     if (wasEmpty) {
                                         countdown = queue[0].remainingDuration;
                                         currentQueueIndex = 0;
+                                        // Change to blue when starting countdown
+                                        $('#progressBar').removeClass('bg-success').addClass('progress-bar');
+                                        $('#desktopProgressBar').removeClass('bg-success').addClass('progress-bar');
                                         updateCountdown();
                                     }
                                 }
@@ -176,6 +179,9 @@
                                             if (wasEmpty) {
                                                 countdown = queue[0].remainingDuration;
                                                 currentQueueIndex = 0;
+                                                // Change to blue when starting countdown
+                                                $('#progressBar').removeClass('bg-success').addClass('progress-bar');
+                                                $('#desktopProgressBar').removeClass('bg-success').addClass('progress-bar');
                                                 console.log('Starting countdown with remaining duration:', countdown);
                                                 updateCountdown();
                                             }
@@ -234,6 +240,13 @@
                 // Show waiting cards count (total - 1 for current active item)
                 const waitingCards = Math.max(0, queue.length - 1);
                 $('#cardCount').text(waitingCards);
+                
+                // Hide badge when count is 0
+                if (waitingCards === 0) {
+                    $('#cardCount').hide();
+                } else {
+                    $('#cardCount').show();
+                }
             }
             
             generateCards();
@@ -242,7 +255,18 @@
             // Only start countdown if there are items in queue
             if (queue.length > 0) {
                 countdown = queue[0].remainingDuration;
+                // Change to blue when starting countdown
+                $('#progressBar').removeClass('bg-success').addClass('progress-bar');
+                $('#desktopProgressBar').removeClass('bg-success').addClass('progress-bar');
+                $('#countdownText').text(countdown + 's');
+                $('#desktopCountdownText').text(countdown + 's');
                 updateCountdown();
+            } else {
+                // Show available state with green
+                $('#progressBar').addClass('bg-success');
+                $('#desktopProgressBar').addClass('bg-success');
+                $('#countdownText').text('Available');
+                $('#desktopCountdownText').text('Available');
             }
             
             function moveToNextQueue() {
