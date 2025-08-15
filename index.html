@@ -72,6 +72,49 @@
             let countdown = 0;
             let currentQueueIndex = 0;
             
+            // Shared parsing function for both histories and values
+            function parseQueueItem(valueString, debugPrefix = '') {
+                try {
+                    const data = JSON.parse(valueString);
+                    console.log(`${debugPrefix} Parsed data:`, data, 'Type:', typeof data, 'Is array:', Array.isArray(data));
+                    if (Array.isArray(data) && data.length >= 2) {
+                        const [timestamp, duration] = data;
+                        console.log(`${debugPrefix} Extracted - timestamp:`, timestamp, 'duration:', duration);
+                        const now = Date.now();
+                        const endTime = timestamp + (duration * 1000);
+                        console.log(`${debugPrefix} Time validation - now:`, now, 'endTime:', endTime, 'valid:', endTime >= now);
+                        
+                        // Check if timestamp + duration >= now
+                        if ((timestamp + (duration * 1000)) >= now && duration > 0) {
+                            let remainingDuration;
+                            if (timestamp > now) {
+                                // Future timestamp - keep full duration
+                                remainingDuration = duration;
+                                console.log(`${debugPrefix} Future timestamp - keeping full duration:`, remainingDuration);
+                            } else {
+                                // Past timestamp - calculate remaining time (subtract time that has passed)
+                                const timePassedMs = now - timestamp;
+                                const timePassedSec = Math.floor(timePassedMs / 1000);
+                                remainingDuration = Math.max(0, duration - timePassedSec);
+                                console.log(`${debugPrefix} Past timestamp - calculated remaining:`, remainingDuration);
+                            }
+                            
+                            if (remainingDuration > 0) {
+                                return {
+                                    timestamp: timestamp,
+                                    duration: duration,
+                                    remainingDuration: remainingDuration
+                                };
+                            }
+                        }
+                    }
+                    return null;
+                } catch (e) {
+                    console.warn(`${debugPrefix} Failed to parse:`, valueString, e);
+                    return null;
+                }
+            }
+            
             // Initialize E-Ra widget
             if (typeof eraWidget !== 'undefined') {
                 eraWidget.init({
@@ -82,49 +125,29 @@
                     onConfiguration: (configuration) => {
                         console.log('E-Ra configuration:', configuration);
                         // Request history data when configuration is loaded
-                        if (typeof eraWidget.requestHistory === 'function') {
-                            eraWidget.requestHistory();
+                        if (typeof eraWidget.requestHistories === 'function') {
+                            const now = Date.now();
+                            const yesterday = now - (24 * 60 * 60 * 1000);
+                            eraWidget.requestHistories(yesterday, now);
                         }
                     },
                     onHistories: (histories) => {
                         console.log('E-Ra histories:', histories);
+                        console.log('Histories type:', typeof histories, 'Is array:', Array.isArray(histories), 'Length:', histories?.length);
                         // Parse histories format: [{data: [{x, y}], name, color, sensor_id, chip_id, id }]
                         if (histories && Array.isArray(histories)) {
                             const firstHistory = histories[0];
+                            console.log('First history:', firstHistory);
                             if (firstHistory && firstHistory.data && Array.isArray(firstHistory.data)) {
+                                console.log('First history data length:', firstHistory.data.length);
                                 const now = Date.now();
                                 const validItems = [];
                                 
-                                firstHistory.data.forEach(point => {
-                                    try {
-                                        // Parse y as JSON string containing [timestamp, duration]
-                                        const data = JSON.parse(point.y);
-                                        if (Array.isArray(data) && data.length >= 2) {
-                                            const [timestamp, duration] = data;
-                                            // Check if timestamp + duration >= now
-                                            if ((timestamp + (duration * 1000)) >= now) {
-                                                let remainingDuration;
-                                                if (timestamp > now) {
-                                                    // Future timestamp - keep full duration
-                                                    remainingDuration = duration;
-                                                } else {
-                                                    // Past timestamp - calculate remaining time (subtract time that has passed)
-                                                    const timePassedMs = now - timestamp;
-                                                    const timePassedSec = Math.floor(timePassedMs / 1000);
-                                                    remainingDuration = Math.max(0, duration - timePassedSec);
-                                                }
-                                                
-                                                if (remainingDuration > 0) {
-                                                    validItems.push({
-                                                        timestamp: timestamp,
-                                                        duration: duration,
-                                                        remainingDuration: remainingDuration
-                                                    });
-                                                }
-                                            }
-                                        }
-                                    } catch (e) {
-                                        console.warn('Failed to parse history item:', point.y, e);
+                                firstHistory.data.forEach((point, index) => {
+                                    console.log(`Processing point ${index}:`, point);
+                                    const parsed = parseQueueItem(point.y, `[History ${index}]`);
+                                    if (parsed) {
+                                        validItems.push(parsed);
                                     }
                                 });
                                 
@@ -152,61 +175,23 @@
                         if (values && typeof values === 'object') {
                             const id = Object.keys(values)[0];
                             const value = values[id];
-                            try {
-                                const data = JSON.parse(value.value);
-                                console.log('Parsed data:', data, 'Type:', typeof data, 'Is array:', Array.isArray(data));
-                                if (Array.isArray(data) && data.length >= 2) {
-                                    const [timestamp, duration] = data;
-                                    console.log('Extracted - timestamp:', timestamp, 'duration:', duration);
-                                    const now = Date.now();
-                                    const endTime = timestamp + (duration * 1000);
-                                    console.log('Time validation - now:', now, 'endTime:', endTime, 'valid:', endTime >= now);
-                                    // Check if timestamp + duration >= now
-                                    if ((timestamp + (duration * 1000)) >= now && duration > 0) {
-                                        let remainingDuration;
-                                        if (timestamp > now) {
-                                            // Future timestamp - keep full duration
-                                            remainingDuration = duration;
-                                        } else {
-                                            // Past timestamp - calculate remaining time (subtract time that has passed)
-                                            const timePassedMs = now - timestamp;
-                                            const timePassedSec = Math.floor(timePassedMs / 1000);
-                                            remainingDuration = Math.max(0, duration - timePassedSec);
-                                        }
-                                        
-                                        console.log('Time calculation - timePassed:', timePassedSec, 'remainingDuration:', remainingDuration);
-                                        
-                                        if (remainingDuration > 0) {
-                                            const wasEmpty = queue.length === 0;
-                                            console.log('Adding to queue - wasEmpty:', wasEmpty, 'remainingDuration:', remainingDuration);
-                                            queue.push({
-                                                timestamp: timestamp,
-                                                duration: duration,
-                                                remainingDuration: remainingDuration
-                                            });
-                                            generateCards();
-                                            updateCardCount();
-                                            // Start countdown if queue was empty
-                                            if (wasEmpty) {
-                                                countdown = queue[0].remainingDuration;
-                                                currentQueueIndex = 0;
-                                                // Change to blue when starting countdown
-                                                $('#progressBar').removeClass('bg-success').addClass('progress-bar');
-                                                $('#desktopProgressBar').removeClass('bg-success').addClass('progress-bar');
-                                                console.log('Starting countdown with remaining duration:', countdown);
-                                                updateCountdown();
-                                            }
-                                        } else {
-                                            console.log('No remaining time - skipping');
-                                        }
-                                    } else {
-                                        console.log('Item expired or invalid duration - skipping');
-                                    }
-                                } else {
-                                    console.log('Data format invalid - not array or insufficient length');
+                            const parsed = parseQueueItem(value.value, `[Values ${id}]`);
+                            if (parsed) {
+                                const wasEmpty = queue.length === 0;
+                                console.log('Adding to queue - wasEmpty:', wasEmpty, 'remainingDuration:', parsed.remainingDuration);
+                                queue.push(parsed);
+                                generateCards();
+                                updateCardCount();
+                                // Start countdown if queue was empty
+                                if (wasEmpty) {
+                                    countdown = queue[0].remainingDuration;
+                                    currentQueueIndex = 0;
+                                    // Change to blue when starting countdown
+                                    $('#progressBar').removeClass('bg-success').addClass('progress-bar');
+                                    $('#desktopProgressBar').removeClass('bg-success').addClass('progress-bar');
+                                    console.log('Starting countdown with remaining duration:', countdown);
+                                    updateCountdown();
                                 }
-                            } catch (e) {
-                                console.warn('Failed to parse real-time value for id', id, ':', value.value, e);
                             }
                         }
                     }
@@ -373,8 +358,8 @@
                     const seconds = delayCountdown % 60;
                     const timeText = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
                     
-                    $('#countdownText').text(`Next: ${timeText} (${nextItem.remainingDuration}s)`);
-                    $('#desktopCountdownText').text(`Next: ${timeText} (${nextItem.remainingDuration}s)`);
+                    $('#countdownText').text(`Next: ${timeText} (${nextItem.remainingDuration}s)`).removeClass('text-danger').addClass('text-dark');
+                    $('#desktopCountdownText').text(`Next: ${timeText} (${nextItem.remainingDuration}s)`).removeClass('text-danger').addClass('text-dark');
                     
                     // Progress bar decreases during delay
                     const progressPercent = totalDelay > 0 ? (delayCountdown / totalDelay) * 100 : 0;
