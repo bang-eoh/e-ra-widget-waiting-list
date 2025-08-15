@@ -362,8 +362,8 @@
                     const seconds = delayCountdown % 60;
                     const timeText = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
                     
-                    $('#countdownText').text(`Next: ${timeText}`);
-                    $('#desktopCountdownText').text(`Next: ${timeText}`);
+                    $('#countdownText').text(`Next: ${timeText} (${nextItem.remainingDuration}s)`);
+                    $('#desktopCountdownText').text(`Next: ${timeText} (${nextItem.remainingDuration}s)`);
                     
                     // Progress bar decreases during delay
                     const progressPercent = totalDelay > 0 ? (delayCountdown / totalDelay) * 100 : 0;
