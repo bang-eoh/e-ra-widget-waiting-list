@@ -81,6 +81,10 @@
                     needActions: true,
                     onConfiguration: (configuration) => {
                         console.log('E-Ra configuration:', configuration);
+                        // Request history data when configuration is loaded
+                        if (typeof eraWidget.requestHistory === 'function') {
+                            eraWidget.requestHistory();
+                        }
                     },
                     onHistories: (histories) => {
                         console.log('E-Ra histories:', histories);
