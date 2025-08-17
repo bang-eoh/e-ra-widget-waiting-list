@@ -75,6 +75,8 @@
             let countdown = 0;
             let currentQueueIndex = 0;
             let configName = 'Waiting Queue'; // Default title
+            let countdownInterval = null;
+            let delayInterval = null;
             
             // Shared parsing function for both histories and values
             function parseQueueItem(valueString, debugPrefix = '') {
@@ -172,6 +174,8 @@
                                         // Change to blue when starting countdown
                                         $('#progressBar').removeClass('bg-success').addClass('progress-bar');
                                         $('#desktopProgressBar').removeClass('bg-success').addClass('progress-bar');
+                                        clearInterval(countdownInterval);
+                                        countdownInterval = setInterval(updateCountdown, 1000);
                                         updateCountdown();
                                     }
                                 }
@@ -199,6 +203,8 @@
                                     $('#progressBar').removeClass('bg-success').addClass('progress-bar');
                                     $('#desktopProgressBar').removeClass('bg-success').addClass('progress-bar');
                                     console.log('Starting countdown with remaining duration:', countdown);
+                                    clearInterval(countdownInterval);
+                                    countdownInterval = setInterval(updateCountdown, 1000);
                                     updateCountdown();
                                 }
                             }
@@ -278,6 +284,8 @@
                 $('#desktopProgressBar').removeClass('bg-success').addClass('progress-bar');
                 $('#countdownText').text(countdown + 's');
                 $('#desktopCountdownText').text(countdown + 's');
+                clearInterval(countdownInterval);
+                countdownInterval = setInterval(updateCountdown, 1000);
                 updateCountdown();
             } else {
                 // Show available state with green
@@ -318,6 +326,8 @@
                         `);
                     }
                     
+                    clearInterval(countdownInterval);
+                    countdownInterval = setInterval(updateCountdown, 1000);
                     updateCountdown();
                 }
             }
@@ -345,8 +355,9 @@
                 
                 if (countdown > 0) {
                     countdown--;
-                    setTimeout(updateCountdown, 1000);
                 } else {
+                    clearInterval(countdownInterval);
+                    countdownInterval = null;
                     // Show complete state and start 90s delay countdown
                     $('#countdownText').text('Available').removeClass('text-danger').addClass('text-white');
                     $('#desktopCountdownText').text('Available').removeClass('text-danger').addClass('text-white');
@@ -390,12 +401,15 @@
                     
                     if (delayCountdown > 0) {
                         delayCountdown--;
-                        setTimeout(updateDelayCountdown, 1000);
                     } else {
+                        clearInterval(delayInterval);
+                        delayInterval = null;
                         moveToNextQueue();
                     }
                 }
                 
+                clearInterval(delayInterval);
+                delayInterval = setInterval(updateDelayCountdown, 1000);
                 updateDelayCountdown();
             }
         });
