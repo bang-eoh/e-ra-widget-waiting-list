@@ -74,6 +74,7 @@
             let queue = []; // Start with empty queue
             let countdown = 0;
             let currentQueueIndex = 0;
+            let configName = 'Waiting Queue'; // Default title
             
             // Shared parsing function for both histories and values
             function parseQueueItem(valueString, debugPrefix = '') {
@@ -127,6 +128,11 @@
                     needActions: true,
                     onConfiguration: (configuration) => {
                         console.log('E-Ra configuration:', configuration);
+                        // Update config name for display
+                        if (configuration && configuration.realtime_configs && configuration.realtime_configs[0] && configuration.realtime_configs[0].name) {
+                            configName = configuration.realtime_configs[0].name;
+                            updateHeaderTitle();
+                        }
                         // Request history data when configuration is loaded
                         if (typeof eraWidget.requestHistories === 'function') {
                             const now = Date.now();
@@ -246,6 +252,10 @@
                 } else {
                     $('#cardCount').show();
                 }
+            }
+            
+            function updateHeaderTitle() {
+                $('h2.mb-0').text(configName);
             }
             
             // Go Back button click handler
