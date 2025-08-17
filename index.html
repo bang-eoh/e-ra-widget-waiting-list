@@ -77,6 +77,7 @@
             let configName = 'Waiting Queue'; // Default title
             let countdownInterval = null;
             let delayInterval = null;
+            let historiesProcessed = false;
             
             // Shared parsing function for both histories and values
             function parseQueueItem(valueString, debugPrefix = '') {
@@ -178,11 +179,21 @@
                                         updateCountdown();
                                     }
                                 }
+                                
+                                // Mark histories as processed
+                                historiesProcessed = true;
                             }
                         }
                     },
                     onValues: (values) => {
                         console.log('E-Ra real-time values:', values);
+                        
+                        // Ignore values until first histories are processed
+                        if (!historiesProcessed) {
+                            console.log('Ignoring values until histories are processed');
+                            return;
+                        }
+                        
                         // Add new value to queue with {id: value} format
                         if (values && typeof values === 'object') {
                             const id = Object.keys(values)[0];
