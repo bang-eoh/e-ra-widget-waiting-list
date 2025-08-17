@@ -169,7 +169,6 @@
                                     updateCardCount();
                                     // Start countdown if queue was empty
                                     if (wasEmpty) {
-                                        countdown = queue[0].remainingDuration;
                                         currentQueueIndex = 0;
                                         // Change to blue when starting countdown
                                         $('#progressBar').removeClass('bg-success').addClass('progress-bar');
@@ -197,12 +196,10 @@
                                 updateCardCount();
                                 // Start countdown if queue was empty
                                 if (wasEmpty) {
-                                    countdown = queue[0].remainingDuration;
                                     currentQueueIndex = 0;
                                     // Change to blue when starting countdown
                                     $('#progressBar').removeClass('bg-success').addClass('progress-bar');
                                     $('#desktopProgressBar').removeClass('bg-success').addClass('progress-bar');
-                                    console.log('Starting countdown with remaining duration:', countdown);
                                     clearInterval(countdownInterval);
                                     countdownInterval = setInterval(updateCountdown, 1000);
                                     updateCountdown();
@@ -224,7 +221,7 @@
                                 <div class="card-body d-flex align-items-center justify-content-center" style="height: 100px;">
                                     <div class="progress w-100" style="height: 60px;">
                                         <div class="progress-bar d-flex align-items-center justify-content-center" role="progressbar" id="desktopProgressBar" style="width: 100%;">
-                                            <span class="fw-bold text-white" id="desktopCountdownText">${queue[0].remainingDuration}s</span>
+                                            <span class="fw-bold text-white" id="desktopCountdownText">${queue[0].duration}s</span>
                                         </div>
                                     </div>
                                 </div>
@@ -238,7 +235,7 @@
                             <div class="col-md-4 mb-3">
                                 <div class="card waiting-card">
                                     <div class="card-body d-flex align-items-center justify-content-center" style="height: 100px;">
-                                        <h5 class="card-title mb-0">${item.remainingDuration}s</h5>
+                                        <h5 class="card-title mb-0">${item.duration}s</h5>
                                     </div>
                                 </div>
                             </div>
@@ -278,12 +275,9 @@
             
             // Only start countdown if there are items in queue
             if (queue.length > 0) {
-                countdown = queue[0].remainingDuration;
                 // Change to blue when starting countdown
                 $('#progressBar').removeClass('bg-success').addClass('progress-bar');
                 $('#desktopProgressBar').removeClass('bg-success').addClass('progress-bar');
-                $('#countdownText').text(countdown + 's');
-                $('#desktopCountdownText').text(countdown + 's');
                 clearInterval(countdownInterval);
                 countdownInterval = setInterval(updateCountdown, 1000);
                 updateCountdown();
@@ -307,7 +301,6 @@
                 
                 // Start next countdown if there are more items
                 if (queue.length > 0) {
-                    countdown = queue[0].remainingDuration;
                     currentQueueIndex = 0; // Reset to 0 since we shifted the queue
                     
                     // Reset progress bar color
@@ -317,10 +310,15 @@
                     // Add progress bar to the new first card if it doesn't have one
                     const firstCard = $('#waitingCardsList .col-md-4').first();
                     if (firstCard.length && !firstCard.find('.progress').length) {
+                        const now = Date.now();
+                        const endTime = queue[0].timestamp + (queue[0].duration * 1000);
+                        const remainingMs = Math.max(0, endTime - now);
+                        const remainingSeconds = Math.ceil(remainingMs / 1000);
+                        
                         firstCard.find('.card-body').html(`
                             <div class="progress w-100" style="height: 60px;">
                                 <div class="progress-bar d-flex align-items-center justify-content-center" role="progressbar" id="desktopProgressBar" style="width: 100%;">
-                                    <span class="fw-bold text-white" id="desktopCountdownText">${queue[0].remainingDuration}s</span>
+                                    <span class="fw-bold text-white" id="desktopCountdownText">${remainingSeconds}s</span>
                                 </div>
                             </div>
                         `);
@@ -333,15 +331,23 @@
             }
             
             function updateCountdown() {
-                const minutes = Math.floor(countdown / 60);
-                const seconds = countdown % 60;
+                if (queue.length === 0) return;
+                
+                const currentItem = queue[0];
+                const now = Date.now();
+                const endTime = currentItem.timestamp + (currentItem.duration * 1000);
+                const remainingMs = Math.max(0, endTime - now);
+                const remainingSeconds = Math.ceil(remainingMs / 1000);
+                
+                const minutes = Math.floor(remainingSeconds / 60);
+                const seconds = remainingSeconds % 60;
                 const timeText = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
                 
                 $('#countdownText').text(timeText);
                 $('#desktopCountdownText').text(timeText);
                 
-                const totalTime = queue.length > 0 ? queue[0].remainingDuration : 12;
-                const progressPercent = (countdown / totalTime) * 100;
+                const totalTime = currentItem.duration;
+                const progressPercent = (remainingSeconds / totalTime) * 100;
                 $('#progressBar').css('width', progressPercent + '%');
                 $('#desktopProgressBar').css('width', progressPercent + '%');
                 
@@ -353,18 +359,17 @@
                     $('#desktopCountdownText').removeClass('text-danger').addClass('text-white');
                 }
                 
-                if (countdown > 0) {
-                    countdown--;
+                if (remainingSeconds > 0) {
+                    countdown = remainingSeconds;
                 } else {
                     clearInterval(countdownInterval);
                     countdownInterval = null;
-                    // Show complete state and start 90s delay countdown
+                    // Show complete state and start delay countdown
                     $('#countdownText').text('Available').removeClass('text-danger').addClass('text-white');
                     $('#desktopCountdownText').text('Available').removeClass('text-danger').addClass('text-white');
                     $('#progressBar').css('width', '100%').removeClass('progress-bar').addClass('progress-bar bg-success');
                     $('#desktopProgressBar').css('width', '100%').removeClass('progress-bar').addClass('progress-bar bg-success');
                     
-                    // Start 90 second delay countdown
                     startDelayCountdown();
                 }
             }
