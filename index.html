@@ -55,7 +55,10 @@
         <div class="container mt-5">
             <div class="row">
                 <div class="col-12">
-                    <h2 class="mb-4">Waiting Queue</h2>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2 class="mb-0">Waiting Queue</h2>
+                        <button class="btn btn-secondary" id="goBackBtn">Go Back</button>
+                    </div>
                     <div class="row" id="waitingCardsList">
                     </div>
                 </div>
@@ -244,6 +247,15 @@
                     $('#cardCount').show();
                 }
             }
+            
+            // Go Back button click handler
+            $('#goBackBtn').click(function() {
+                if (typeof eraWidget !== 'undefined' && typeof eraWidget.postMessage === 'function') {
+                    eraWidget.postMessage('exitFullScreen');
+                } else {
+                    console.warn('E-Ra widget exitFullScreen function not available');
+                }
+            });
             
             generateCards();
             updateCardCount();
