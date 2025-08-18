@@ -85,8 +85,8 @@
                     const data = JSON.parse(valueString);
                     console.log(`${debugPrefix} Parsed data:`, data, 'Type:', typeof data, 'Is array:', Array.isArray(data));
                     if (Array.isArray(data) && data.length >= 2) {
-                        const [timestamp, duration] = data;
-                        console.log(`${debugPrefix} Extracted - timestamp:`, timestamp, 'duration:', duration);
+                        const [timestamp, duration, uniqueCode] = data;
+                        console.log(`${debugPrefix} Extracted - timestamp:`, timestamp, 'duration:', duration, 'uniqueCode:', uniqueCode);
                         const now = Date.now();
                         const endTime = timestamp + (duration * 1000);
                         console.log(`${debugPrefix} Time validation - now:`, now, 'endTime:', endTime, 'valid:', endTime >= now);
@@ -110,7 +110,8 @@
                                 return {
                                     timestamp: timestamp,
                                     duration: duration,
-                                    remainingDuration: remainingDuration
+                                    remainingDuration: remainingDuration,
+                                    uniqueCode: uniqueCode || null
                                 };
                             }
                         }
@@ -200,6 +201,15 @@
                             const value = values[id];
                             const parsed = parseQueueItem(value.value, `[Values ${id}]`);
                             if (parsed) {
+                                // Check for duplicate unique code
+                                if (parsed.uniqueCode) {
+                                    const existingItem = queue.find(item => item.uniqueCode === parsed.uniqueCode);
+                                    if (existingItem) {
+                                        console.log('Skipping duplicate unique code:', parsed.uniqueCode);
+                                        return;
+                                    }
+                                }
+                                
                                 const wasEmpty = queue.length === 0;
                                 console.log('Adding to queue - wasEmpty:', wasEmpty, 'remainingDuration:', parsed.remainingDuration);
                                 queue.push(parsed);
